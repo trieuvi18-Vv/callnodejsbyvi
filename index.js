@@ -1,36 +1,71 @@
 require("dotenv").config();
+const express = require("express");
 const axios = require("axios");
+const app = express();
 
 const API_KEY = process.env.API_KEY;
 
-// Nhận CITY từ terminal
-const CITY = process.argv[2];
+app.use(express.static("public"));
+app.use(express.json());
 
-if (!CITY) {
-    console.log(" Bạn chưa nhập tên thành phố.");
-    console.log(" Ví dụ: node index.js \"Thai Nguyen\"");
-    process.exit(1);
+
+function getEmoji(icon) {
+    const map = {
+        "01d": "☀️",  // trời nắng
+        "01n": "🌕",
+
+        "02d": "🌤️", // ít mây
+        "02n": "☁️",
+
+        "03d": "⛅",  // nhiều mây
+        "03n": "☁️",
+
+        "04d": "☁️",
+        "04n": "☁️",
+
+        "09d": "🌧️", // mưa
+        "09n": "🌧️",
+
+        "10d": "🌦️", // mưa rào
+        "10n": "🌧️",
+
+        "11d": "⛈️", // giông
+        "11n": "⛈️",
+
+        "13d": "❄️", // tuyết
+        "13n": "❄️",
+
+        "50d": "🌫️", // sương mù
+        "50n": "🌫️"
+    };
+
+    return map.hasOwnProperty(icon) ? map[icon] : "🌡️";
 }
 
-async function getWeather() {
-    try {
-        if (!API_KEY) {
-            console.error(" Thiếu API_KEY trong file .env");
-            return;
-        }
+app.post("/weather", async (req, res) => {
+    const city = req.body.city;
 
-        const url = `https://api.openweathermap.org/data/2.5/weather?q=${CITY}&appid=${API_KEY}&units=metric&lang=vi`;
-
-        const res = await axios.get(url);
-        const data = res.data;
-
-        console.log(`🌤️ Thời tiết tại ${CITY}:`);
-        console.log(`🌡️ Nhiệt độ: ${data.main.temp}°C`);
-        console.log(`💧 Độ ẩm: ${data.main.humidity}%`);
-        console.log(`☁️ Mô tả: ${data.weather[0].description}`);
-    } catch (err) {
-        console.error(" Lỗi API:", err.message);
+    if (!city) {
+        return res.json({ error: "Bạn phải nhập tên thành phố!" });
     }
-}
 
-getWeather();
+    try {
+        const url = `https://api.openweathermap.org/data/2.5/weather?q=${city}&appid=${API_KEY}&units=metric&lang=vi`;
+        const response = await axios.get(url);
+        const data = response.data;
+
+        res.json({
+            city,
+            emoji: getEmoji(data.weather[0].icon),
+            temp: data.main.temp,
+            humidity: data.main.humidity,
+            desc: data.weather[0].description
+        });
+    } catch (err) {
+        res.json({ error: "Không tìm thấy thành phố!" });
+    }
+});
+
+app.listen(3000, () => {
+    console.log("Server chạy tại http://localhost:3000");
+});

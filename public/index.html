@@ -1,0 +1,53 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <title>Thời tiết</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+<div class="container">
+    <h1>🌤️Thời tiết</h1>
+
+    <input id="city" type="text" placeholder="Nhập tên thành phố...">
+    <button onclick="getWeather()">Xem</button>
+
+    <div id="result"></div>
+</div>
+
+<script>
+    async function getWeather() {
+        const city = document.getElementById("city").value;
+        const resultDiv = document.getElementById("result");
+
+        if (!city) {
+            resultDiv.innerHTML = "<p class='error'>Bạn phải nhập tên thành phố!</p>";
+            return;
+        }
+
+        const res = await fetch("/weather", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ city })
+        });
+
+        const data = await res.json();
+
+        if (data.error) {
+            resultDiv.innerHTML = `<p class="error">${data.error}</p>`;
+            return;
+        }
+
+        resultDiv.innerHTML = `
+        <h2>📍${data.city}</h2>
+        <div class="weather-emoji">${data.emoji}</div>
+        <p>🥵Nhiệt độ: ${data.temp}°C</p>
+        <p>⛄Độ ẩm: ${data.humidity}%</p>
+        <p>🌬️Mô tả: ${data.desc}</p>
+    `;
+    }
+</script>
+
+</body>
+</html>
